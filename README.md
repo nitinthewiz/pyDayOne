@@ -18,3 +18,11 @@ FAQ
 **Q.** Bugs exist
 
 **Ans.** Yes they do.
+
+
+How to Run this?
+================
+
+1. You can run it from IDLE
+2. You can run it from command prompt/terminal with the command - "python pyDayOne.py"
+3. You can compile it into an exe/app and if you do, you can give it to me too, so I can distribute it to people. :)
