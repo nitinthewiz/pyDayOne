@@ -11,7 +11,7 @@ import os
 import getpass
 import platform
 import xml.etree.ElementTree as ET
-import wx.lib.inspection
+#import wx.lib.inspection
 import datetime
 import uuid
 import re
