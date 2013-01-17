@@ -1,7 +1,7 @@
 pyDayOne
 ========
 
-A cross-platform python app to show your Day One entries and let you make new ones. Tested in Windows.
+A Windows based python app to show your Day One entries and let you make new ones. Tested in Windows 7.
 
 
 FAQ
