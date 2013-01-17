@@ -22,9 +22,11 @@ ID_NEW = 3
 
 class MyFrame(wx.Frame):
 	the_dict = {}
+	uuid_dict = {}
 	the_list = []
 	sorted_dict = {}
 	found_entry = False
+	found_UUID = False
 	directory = ''
 	myUUID = ''
 		
@@ -37,7 +39,7 @@ class MyFrame(wx.Frame):
 			self.directory = root.text
 		except:
 			if platform.system() == 'Windows':
-				directory = 'C:/Users/'+getpass.getuser()+'/Dropbox/Apps/Day One/Journal.dayone/entries/'
+				directory = 'C:\\Users\\'+getpass.getuser()+'\\Dropbox\\Apps\\Day One\\Journal.dayone\\entries\\'
 				if os.path.exists(directory):
 					self.directory = directory
 				else:
@@ -79,6 +81,7 @@ class MyFrame(wx.Frame):
 		
 		for root,dirs,files in os.walk(self.directory):
 			for file in files:
+				#print file
 				if file.endswith(".doentry"):
 					tree = ET.parse(self.directory+file)
 					root = tree.getroot()
@@ -88,10 +91,14 @@ class MyFrame(wx.Frame):
 							tempdate = child.text
 						if child.text == 'Entry Text':
 							self.found_entry = True
+						if child.text == 'UUID':
+							self.found_UUID = True
+						if child.tag == 'string' and self.found_UUID and tempdate != '':
+							self.uuid_dict[tempdate] = child.text
+							self.found_UUID = False
 						if child.tag == 'string' and self.found_entry and tempdate != '':
 							self.the_dict[tempdate] = child.text
 							self.found_entry = False
-							tempdate = ''
 		keylist = self.the_dict.keys()
 		keylist.sort(reverse=True)
 		
@@ -109,6 +116,7 @@ class MyFrame(wx.Frame):
 		self.entry_list.SetSelection(0)
 		single_entry = self.entry_list.GetString(0)
 		self.text.SetValue(self.sorted_dict[single_entry])
+		self.myUUID = self.uuid_dict[single_entry]
 		
 		newBtn = wx.Button(panel, ID_NEW, "New")
 		saveBtn = wx.Button(panel, ID_SAVE, "Save")
@@ -145,40 +153,59 @@ class MyFrame(wx.Frame):
 		self.text.Clear()
 	
 	def OnSave(self, event):
-		plist = ET.Element('plist')
-		plist.attrib = {'version':"1.0"}
-		b = ET.SubElement(plist, 'dict')
 		
-		c = ET.SubElement(b, 'key')
-		c.text = 'Creation Date'
-		d = ET.SubElement(b, 'date')
-		d.text = str(self.entry_list.GetString(self.entry_list.GetSelection()))
-		
-		e = ET.SubElement(b, 'key')
-		e.text = 'Entry Text'
-		f = ET.SubElement(b, 'string')
-		f.text = self.text.GetValue()
-		
-		g = ET.SubElement(b, 'key')
-		g.text = 'Starred'
-		h = ET.SubElement(b, 'false')
-		
-		i = ET.SubElement(b, 'key')
-		i.text = 'UUID'
-		j = ET.SubElement(b, 'string')
-		j.text = self.myUUID
-		
-		file = open(self.directory+self.myUUID+'.doentry', 'w')
-		XMLL = """<?xml version="1.0" encoding="UTF-8"?>"""
-		DTD = """<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">"""
-		file.write(XMLL + "\n")
-		file.write(DTD + "\n")
-		ET.ElementTree(plist).write(file)
+		try:
+			with open(self.directory+self.myUUID+'.doentry', 'w+') as f:
+				#print "came in with"
+				#f.close()
+				tree = ET.parse(self.directory+self.myUUID+'.doentry')
+				#print "tree parse began"
+				root = tree.getroot()
+				if child.text == 'Entry Text':
+					self.found_entry = True
+				if child.tag == 'string' and self.found_entry:
+					child.text = self.text.GetValue()
+					self.found_entry = False
+				tree.write(self.directory+self.myUUID+'.doentry')
+		except:
+			self.uuid_dict[self.entry_list.GetString(self.entry_list.GetSelection())] = self.myUUID
+			self.sorted_dict[self.entry_list.GetString(self.entry_list.GetSelection())] = self.text.GetValue()
+			print 'Oh dear.'
+			plist = ET.Element('plist')
+			plist.attrib = {'version':"1.0"}
+			b = ET.SubElement(plist, 'dict')
+			
+			c = ET.SubElement(b, 'key')
+			c.text = 'Creation Date'
+			d = ET.SubElement(b, 'date')
+			d.text = str(self.entry_list.GetString(self.entry_list.GetSelection()))
+			
+			e = ET.SubElement(b, 'key')
+			e.text = 'Entry Text'
+			f = ET.SubElement(b, 'string')
+			f.text = self.text.GetValue()
+			
+			g = ET.SubElement(b, 'key')
+			g.text = 'Starred'
+			h = ET.SubElement(b, 'false')
+			
+			i = ET.SubElement(b, 'key')
+			i.text = 'UUID'
+			j = ET.SubElement(b, 'string')
+			j.text = self.myUUID
+			
+			file = open(self.directory+self.myUUID+'.doentry', 'w')
+			XMLL = """<?xml version="1.0" encoding="UTF-8"?>"""
+			DTD = """<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">"""
+			file.write(XMLL + "\n")
+			file.write(DTD + "\n")
+			ET.ElementTree(plist).write(file)
 
 	def OnSelect(self, event):
 		index = event.GetSelection()
 		single_entry = self.entry_list.GetString(index)
 		self.text.SetValue(self.sorted_dict[single_entry])
+		self.myUUID = self.uuid_dict[single_entry]
 
 	def OnTimer(self, event):
 		ct = gmtime()
