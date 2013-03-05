@@ -9,7 +9,7 @@ FAQ
 
 **Q.** Why?
 
-**Ans.** Because Windows Day One support is sad.
+**Ans.** Because Windows Day One support is sad (read: non-existant).
 
 **Q.** Hasn't this been done before on BitBucket
 
@@ -32,3 +32,9 @@ Requirements
 
 The following python modules need to be installed - 
 1. wxPython
+
+
+Major Bugs - 
+============
+
+1. Doesn't support many languages like Chinese (utf-8 encoding only)
