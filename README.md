@@ -17,7 +17,14 @@ FAQ
 
 **Q.** Bugs exist
 
-**Ans.** Yes they do.
+**Ans.** Probably.
+
+
+Requirements
+============
+
+The following python modules need to be installed - 
+1. pyGTK
 
 
 How to Run this?
@@ -25,13 +32,6 @@ How to Run this?
 
 1. You can run it from command prompt/terminal with the command - "python pyDayOne.py"
 2. You can compile it into an exe/app and if you do, you can give it to me too, so I can distribute it to people. :)
-
-
-Requirements
-============
-
-The following python modules need to be installed - 
-1. wxPython
 
 
 Major Bugs - 
