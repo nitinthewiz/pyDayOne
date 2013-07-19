@@ -78,6 +78,9 @@ class MyFrame(wx.Frame):
 				ET.ElementTree(dir).write(savefile)
 				
 		wx.Frame.__init__(self, parent, id, title, wx.DefaultPosition, (800, 800))
+		fn = os.path.join(os.path.dirname(sys.argv[0]), 'pyDayOne.ico')
+		self.icon = wx.Icon(fn, wx.BITMAP_TYPE_ICO)
+		self.SetIcon(self.icon)
 		
 		for root,dirs,files in os.walk(self.directory):
 			for file in files:
