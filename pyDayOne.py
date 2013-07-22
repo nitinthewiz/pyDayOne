@@ -15,25 +15,24 @@ import xml.etree.ElementTree as ET
 #import wx.lib.inspection
 import datetime
 import uuid
-import re
+from plistlib import readPlist, writePlist
 
 ID_SAVE = 1
 ID_DELETE = 2
 ID_NEW = 3
+datetime_format =  '%Y-%m-%dT%H:%M:%SZ'
 
-plist_header = ["""<?xml version="1.0" encoding="UTF-8"?>\n""",
-                """<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">\n"""]
-
+def _emptyEntry():
+	return {'Creation Date': datetime.datetime.utcnow(),
+	        'Entry Text':    '',
+	        'Starred':       false,
+	        'UUID':          str(uuid.uuid4()).replace('-', '').upper()}
 
 class MyFrame(wx.Frame):
-	the_dict = {}
-	uuid_dict = {}
-	the_list = []
-	sorted_dict = {}
-	found_entry = False
-	found_UUID = False
+	all_tags = set()
+	entries = {}
+	timestamp_list = []
 	directory = ''
-	myUUID = ''
 
 	def __init__(self, parent, id, title):
 		saveFileName = 'DayOne.sav'
@@ -101,42 +100,29 @@ class MyFrame(wx.Frame):
 		for root,dirs,files in os.walk(self.directory):
 			del dirs[:]
 			for file in files:
-				#print file
-				if file.endswith(".doentry"):
-					tree = ET.parse(os.path.join(self.directory, file))
-					root = tree.getroot()
-					for child in root[0]:
-						#print child.tag, child.text
-						if child.tag == 'date':
-							tempdate = child.text
-						if child.text == 'Entry Text':
-							self.found_entry = True
-						if child.text == 'UUID':
-							self.found_UUID = True
-						if child.tag == 'string' and self.found_UUID and tempdate != '':
-							self.uuid_dict[tempdate] = child.text
-							self.found_UUID = False
-						if child.tag == 'string' and self.found_entry and tempdate != '':
-							self.the_dict[tempdate] = child.text
-							self.found_entry = False
-		keylist = self.the_dict.keys()
+				(filename, _) = os.path.splitext(file)
+				this_entry = readPlist(os.path.join(root, file))
+				if (('Creation Date' in this_entry) and ('Entry Text' in this_entry) and
+				    ('UUID' in this_entry) and (this_entry['UUID'] == filename)):
+					self.entries[this_entry['Creation Date'].strftime(datetime_format)] = this_entry
+					curr_tags = set(this_entry.get('Tags', []))
+					self.all_tags |= curr_tags
+		keylist = self.entries.keys()
 		keylist.sort(reverse=True)
 
 		for key in keylist:
-			self.sorted_dict[key] = self.the_dict[key]
-			self.the_list.append(key)
+			self.timestamp_list.append(key)
 
 		vbox = wx.BoxSizer(wx.VERTICAL)
 		hbox1 = wx.BoxSizer(wx.HORIZONTAL)
 		hbox3 = wx.BoxSizer(wx.HORIZONTAL)
 		panel = wx.Panel(self, -1)
-		self.entry_list = wx.ListBox(panel, 26, wx.DefaultPosition, (170, 630), self.the_list, wx.LB_SINGLE)
+		self.entry_list = wx.ListBox(panel, 26, wx.DefaultPosition, (170, 630), self.timestamp_list, wx.LB_SINGLE)
 		self.text = wx.TextCtrl(panel, -1, '', size=(500, 630), style=wx.TE_MULTILINE)
 
 		self.entry_list.SetSelection(0)
-		single_entry = self.entry_list.GetString(0)
-		self.text.SetValue(self.sorted_dict[single_entry])
-		self.myUUID = self.uuid_dict[single_entry]
+		selected_dt = self.entry_list.GetString(0)
+		self.text.SetValue(self.entries[selected_dt]['Entry Text'])
 
 		newBtn = wx.Button(panel, ID_NEW, "New")
 		saveBtn = wx.Button(panel, ID_SAVE, "Save")
@@ -162,82 +148,27 @@ class MyFrame(wx.Frame):
 		self.Close()
 
 	def OnNew(self, event):
-		now = datetime.datetime.utcnow()
-		theUUID = uuid.uuid4()
-		self.myUUID = re.sub('[-]', '', str(theUUID))
-		self.myUUID = self.myUUID.swapcase()
-		item = now.strftime("%Y-%m-%dT%H:%M:%SZ")
-		pos = 0
-		self.entry_list.Insert(item, pos)
-		self.entry_list.SetSelection(0)
+		new_entry = _emptyEntry()
+		entry_dt = new_entry['Creation Date'].strftime(datetime_format)
+		self.entries[entry_dt] = new_entry
+		self.entry_list.Insert(entry_dt, 0)
 		self.text.Clear()
+		self.entry_list.SetSelection(0)
 
 	def OnSave(self, event):
-
-		try:
-			tree = ET.parse(os.path.join(self.directory, myUUID+'.doentry'))
-			root = tree.getroot()
-			self.found_entry = false
-			for child in root[0]:
-				if child.text == 'Entry Text':
-					self.found_entry = True
-				if child.tag == 'string' and self.found_entry:
-					child.text = self.text.GetValue()
-					self.found_entry = False
-			tree.write(self.directory+self.myUUID+'.doentry')
-		except:
-			def indent(elem, level=0):
-			    i = "\n" + level*"  "
-			    if len(elem):
-			        if not elem.text or not elem.text.strip():
-			            elem.text = i + "  "
-			        if not elem.tail or not elem.tail.strip():
-			            elem.tail = i
-			        for elem in elem:
-			            indent(elem, level+1)
-			        if not elem.tail or not elem.tail.strip():
-			            elem.tail = i
-			    else:
-			        if level and (not elem.tail or not elem.tail.strip()):
-			            elem.tail = i
-
-			self.uuid_dict[self.entry_list.GetString(self.entry_list.GetSelection())] = self.myUUID
-			self.sorted_dict[self.entry_list.GetString(self.entry_list.GetSelection())] = self.text.GetValue()
-
-			plist = ET.Element('plist')
-			plist.attrib = {'version': '1.0'}
-			b = ET.SubElement(plist, 'dict')
-
-			c = ET.SubElement(b, 'key')
-			c.text = 'Creation Date'
-			d = ET.SubElement(b, 'date')
-			d.text = str(self.entry_list.GetString(self.entry_list.GetSelection()))
-
-			e = ET.SubElement(b, 'key')
-			e.text = 'Entry Text'
-			f = ET.SubElement(b, 'string')
-			f.text = self.text.GetValue()
-
-			g = ET.SubElement(b, 'key')
-			g.text = 'Starred'
-			h = ET.SubElement(b, 'false')
-
-			i = ET.SubElement(b, 'key')
-			i.text = 'UUID'
-			j = ET.SubElement(b, 'string')
-			j.text = self.myUUID
-
-			indent(plist)
-			file = open(os.path.join(self.directory, myUUID+'.doentry'), 'w')
-			file.writelines(plist_header)
-			file.writelines(ET.tostringlist(plist))
-			file.close()
+		index = self.entry_list.GetSelection()
+		if index == wxNOT_FOUND:
+			return
+		selected_time = self.entry_list.GetString(index)
+		selected_entry = self.entries[selected_time]
+		selected_entry['Entry Text'] = self.text.GetValue()
+		saveToPath = os.path.join(self.directory, selected_entry['UUID']+'.doentry')
+		writePlist(selected_entry, saveToPath)
 
 	def OnSelect(self, event):
 		index = event.GetSelection()
-		single_entry = self.entry_list.GetString(index)
-		self.text.SetValue(self.sorted_dict[single_entry])
-		self.myUUID = self.uuid_dict[single_entry]
+		selected_entry = self.entry_list.GetString(index)
+		self.text.SetValue(self.entries[selected_entry]['Entry Text'])
 
 	def OnTimer(self, event):
 		ct = gmtime()
