@@ -11,8 +11,6 @@ import os
 import os.path
 import sys
 import platform
-import xml.etree.ElementTree as ET
-#import wx.lib.inspection
 import datetime
 import uuid
 from plistlib import readPlist, writePlist
@@ -46,11 +44,9 @@ class MyFrame(wx.Frame):
 			os.makedirs(saveFileDir)
 		saveFileName = os.path.join(saveFileDir, saveFileName)
 
-		savefile = open(saveFileName, 'w+')
 		try:
-			tree = ET.parse(savefile)
-			root = tree.getroot()
-			self.directory = root.text
+			settings = readPlist(saveFileName)
+			self.directory = settings['directory']
 		except:
 			if platform.system() == 'Windows':
 				directory =  os.path.abspath(os.path.join(shell.SHGetFolderPath(0, shellcon.CSIDL_PROFILE, None, 0),
@@ -64,9 +60,7 @@ class MyFrame(wx.Frame):
 						self.directory = dialog.GetPath()
 						self.directory = self.directory+'\\'
 						self.directory.replace('\\','/')
-				dir = ET.Element('directory')
-				dir.text = self.directory
-				ET.ElementTree(dir).write(savefile)
+				writePlist({'directory':directory}, saveFileName)
 			elif platform.system() == 'Linux':
 				directory = os.path.expanduser('~/Dropbox/Apps/Day One/Journal.dayone/entries/')
 				if os.path.exists(directory):
@@ -78,9 +72,7 @@ class MyFrame(wx.Frame):
 						self.directory = dialog.GetPath()
 						self.directory = self.directory+'\\'
 						self.directory.replace('\\','/')
-				dir = ET.Element('directory')
-				dir.text = self.directory
-				ET.ElementTree(dir).write(savefile)
+				writePlist({'directory':directory}, saveFileName)
 			else:
 				wx.MessageBox('Dropbox folder not found. Please select the entries directory of Day One. It will be under Dropbox -> Apps -> Day One -> Journal.dayone -> entries', 'Error', wx.OK | wx.ICON_EXCLAMATION)
 				dialog = wx.DirDialog(None, "Choose the Day One entries directory:",style=wx.DD_DEFAULT_STYLE | wx.DD_NEW_DIR_BUTTON)
@@ -88,9 +80,7 @@ class MyFrame(wx.Frame):
 					self.directory = dialog.GetPath()
 					self.directory = self.directory+'\\'
 					self.directory.replace('\\','/')
-				dir = ET.Element('directory')
-				dir.text = self.directory
-				ET.ElementTree(dir).write(savefile)
+				writePlist({'directory':directory}, saveFileName)
 
 		wx.Frame.__init__(self, parent, id, title, wx.DefaultPosition, (800, 800))
 		fn = os.path.join(os.path.dirname(sys.argv[0]), 'pyDayOne.ico')
