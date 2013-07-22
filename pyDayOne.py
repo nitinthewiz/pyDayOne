@@ -10,7 +10,6 @@ from wxPython.wx import *
 import os
 import os.path
 import sys
-import getpass
 import platform
 import xml.etree.ElementTree as ET
 #import wx.lib.inspection
@@ -55,7 +54,8 @@ class MyFrame(wx.Frame):
 			self.directory = root.text
 		except:
 			if platform.system() == 'Windows':
-				directory = 'C:\\Users\\'+getpass.getuser()+'\\Dropbox\\Apps\\Day One\\Journal.dayone\\entries\\'
+				directory =  os.path.abspath(os.path.join(shell.SHGetFolderPath(0, shellcon.CSIDL_PROFILE, None, 0),
+				                                          r'Dropbox/Apps/Day One/Journal.dayone/entries/'))
 				if os.path.exists(directory):
 					self.directory = directory
 				else:
@@ -69,7 +69,7 @@ class MyFrame(wx.Frame):
 				dir.text = self.directory
 				ET.ElementTree(dir).write(savefile)
 			elif platform.system() == 'Linux':
-				directory = '~/Dropbox/Apps/Day One/Journal.dayone/entries/'
+				directory = os.path.expanduser('~/Dropbox/Apps/Day One/Journal.dayone/entries/')
 				if os.path.exists(directory):
 					self.directory = directory
 				else:
@@ -99,10 +99,11 @@ class MyFrame(wx.Frame):
 		self.SetIcon(self.icon)
 
 		for root,dirs,files in os.walk(self.directory):
+			del dirs[:]
 			for file in files:
 				#print file
 				if file.endswith(".doentry"):
-					tree = ET.parse(self.directory+file)
+					tree = ET.parse(os.path.join(self.directory, file))
 					root = tree.getroot()
 					for child in root[0]:
 						#print child.tag, child.text
@@ -174,7 +175,7 @@ class MyFrame(wx.Frame):
 	def OnSave(self, event):
 
 		try:
-			tree = ET.parse(self.directory+self.myUUID+'.doentry')
+			tree = ET.parse(os.path.join(self.directory, myUUID+'.doentry'))
 			root = tree.getroot()
 			self.found_entry = false
 			for child in root[0]:
@@ -227,7 +228,7 @@ class MyFrame(wx.Frame):
 			j.text = self.myUUID
 
 			indent(plist)
-			file = open(self.directory+self.myUUID+'.doentry', 'w')
+			file = open(os.path.join(self.directory, myUUID+'.doentry'), 'w')
 			file.writelines(plist_header)
 			file.writelines(ET.tostringlist(plist))
 			file.close()
