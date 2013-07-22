@@ -2,7 +2,6 @@ import sys
 from cx_Freeze import setup, Executable
 
 build_exe_options = {"include_files": ["pyDayOne.ico"],
-                     "build_exe": "./bin",
                      "optimize": 2,
                      "icon": 'pyDayOne.ico',
                      "include_msvcr": True,
