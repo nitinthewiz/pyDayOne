@@ -38,3 +38,7 @@ Major Bugs -
 ============
 
 1. Doesn't support many languages like Chinese (utf-8 encoding only)
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/nitinthewiz/pydayone/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
